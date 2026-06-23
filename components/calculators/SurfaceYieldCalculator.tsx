@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InputField from '@/components/ui/InputField';
 import ResultCard from '@/components/ui/ResultCard';
 import FormulaBox from '@/components/ui/FormulaBox';
@@ -9,6 +9,7 @@ import HowToUseBox from '@/components/ui/HowToUseBox';
 import AdvisorCard, { AdvisorGrade } from '@/components/ui/AdvisorCard';
 import SurfaceYieldVacancyPanel from '@/components/ui/SurfaceYieldVacancyPanel';
 import { calcSurfaceYield } from '@/lib/calculators/surfaceYield';
+import { saveSharedProperty } from '@/lib/utils/sharedProperty';
 
 function getAdvisorData(surfaceYield: number, targetPrice5: number | null, targetRent5: number | null): {
   grade: AdvisorGrade;
@@ -125,6 +126,14 @@ export default function SurfaceYieldCalculator() {
     propertyPrice !== null
       ? Math.round((propertyPrice * 0.07) / 12 * 10) / 10
       : null;
+
+  // #9: 入力値をlocalStorageに保存して他ページへ引き継ぐ
+  useEffect(() => {
+    saveSharedProperty({
+      ...(propertyPrice !== null && { propertyPrice }),
+      ...(monthlyRent !== null && { monthlyRentFull: monthlyRent }),
+    });
+  }, [propertyPrice, monthlyRent]);
 
   const advisorData =
     result !== null ? getAdvisorData(result.surfaceYield, targetPrice5, targetRent5) : null;

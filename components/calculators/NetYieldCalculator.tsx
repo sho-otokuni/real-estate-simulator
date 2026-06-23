@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InputField from '@/components/ui/InputField';
 import ResultCard from '@/components/ui/ResultCard';
 import FormulaBox from '@/components/ui/FormulaBox';
@@ -8,6 +8,7 @@ import Disclaimer from '@/components/ui/Disclaimer';
 import HowToUseBox from '@/components/ui/HowToUseBox';
 import AdvisorCard, { AdvisorGrade } from '@/components/ui/AdvisorCard';
 import { calcNetYield } from '@/lib/calculators/netYield';
+import { loadSharedProperty } from '@/lib/utils/sharedProperty';
 
 function getAdvisorData(
   netYield: number,
@@ -129,6 +130,18 @@ export default function NetYieldCalculator() {
   const [vacancyRate, setVacancyRate] = useState<number>(10);
   const [otherExpenses, setOtherExpenses] = useState<number>(0);
 
+  // #9: 表面利回りページで入力した値をlocalStorageから引き継ぐ
+  useEffect(() => {
+    const saved = loadSharedProperty();
+    if (saved.propertyPrice !== undefined && propertyPrice === null) {
+      setPropertyPrice(saved.propertyPrice);
+    }
+    if (saved.monthlyRentFull !== undefined && monthlyRent === null) {
+      setMonthlyRent(saved.monthlyRentFull);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const result =
     propertyPrice !== null && monthlyRent !== null
       ? calcNetYield({
@@ -159,6 +172,14 @@ export default function NetYieldCalculator() {
             10,
         ) / 10
       : null;
+
+  // #4: 経費が全て0かどうかのチェック
+  const allExpensesZero =
+    annualManagementFee === 0 &&
+    annualRepairFund === 0 &&
+    annualPropertyTax === 0 &&
+    annualInsurance === 0 &&
+    otherExpenses === 0;
 
   const advisorData =
     result !== null
@@ -400,6 +421,18 @@ export default function NetYieldCalculator() {
                   </div>
                 </div>
 
+                {/* #4: 経費0警告 */}
+                {allExpensesZero && (
+                  <div className="mb-4 rounded-lg p-3 bg-amber-50 border border-amber-200">
+                    <p className="text-xs font-semibold text-amber-800">⚠️ 経費が未入力です</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      管理費・修繕積立金・固定資産税などが全て0円になっています。
+                      実際の利回りは経費を加味するとさらに低くなる可能性があります。
+                      左の「年間経費」フォームに各費用を入力してください。
+                    </p>
+                  </div>
+                )}
+
                 <ResultCard
                   label="年間家賃収入（空室考慮後）"
                   value={result.annualRentWithVacancy.toFixed(1)}
@@ -416,7 +449,7 @@ export default function NetYieldCalculator() {
                   negative={result.annualNetIncome <= 0}
                 />
                 <ResultCard
-                  label="月間手取り収入"
+                  label="月間手取り収入（ローン返済前）"
                   value={result.monthlyNetIncome.toFixed(1)}
                   unit="万円"
                   highlight

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InputField from '@/components/ui/InputField';
 import ResultCard from '@/components/ui/ResultCard';
 import FormulaBox from '@/components/ui/FormulaBox';
@@ -10,6 +10,7 @@ import AdvisorCard, { AdvisorGrade } from '@/components/ui/AdvisorCard';
 import VacancySensitivityPanel from '@/components/ui/VacancySensitivityPanel';
 import { calcCashflow } from '@/lib/calculators/cashflow';
 import { RepaymentType } from '@/types/calculator';
+import { loadSharedProperty } from '@/lib/utils/sharedProperty';
 
 const LOAN_YEAR_OPTIONS = [10, 15, 20, 25, 30, 35];
 
@@ -136,13 +137,33 @@ function getAdvisorData(
 }
 
 export default function CashflowCalculator() {
+  // #2: 満室時家賃と空室率を分離して入力
+  const [monthlyRentFull, setMonthlyRentFull] = useState<number | null>(null);
+  const [vacancyRate, setVacancyRate] = useState<number>(0);
   const [propertyPrice, setPropertyPrice] = useState<number | null>(null);
   const [downPayment, setDownPayment] = useState<number>(0);
   const [interestRate, setInterestRate] = useState<number>(1.5);
   const [loanYears, setLoanYears] = useState<number>(20);
   const [repaymentType, setRepaymentType] = useState<RepaymentType>('equal-installment');
-  const [monthlyRent, setMonthlyRent] = useState<number | null>(null);
   const [annualExpenses, setAnnualExpenses] = useState<number>(0);
+  // #3: 購入諸費用
+  const [purchaseCosts, setPurchaseCosts] = useState<number>(0);
+
+  // #9: 表面利回りページの入力値をlocalStorageから引き継ぐ
+  useEffect(() => {
+    const saved = loadSharedProperty();
+    if (saved.propertyPrice !== undefined && propertyPrice === null) {
+      setPropertyPrice(saved.propertyPrice);
+    }
+    if (saved.monthlyRentFull !== undefined && monthlyRentFull === null) {
+      setMonthlyRentFull(saved.monthlyRentFull);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // #2: 空室を考慮した実際の月間家賃収入
+  const effectiveMonthlyRent =
+    monthlyRentFull !== null ? monthlyRentFull * (1 - vacancyRate / 100) : null;
 
   const inputs = {
     propertyPrice: propertyPrice ?? 0,
@@ -150,30 +171,31 @@ export default function CashflowCalculator() {
     interestRate,
     loanYears,
     repaymentType,
-    monthlyRent: monthlyRent ?? 0,
+    monthlyRent: effectiveMonthlyRent ?? 0,
     annualExpenses,
+    purchaseCosts,
   };
 
   const result =
-    propertyPrice !== null && monthlyRent !== null
+    propertyPrice !== null && monthlyRentFull !== null
       ? calcCashflow(inputs)
       : null;
 
   const loanAmount = propertyPrice !== null ? Math.max(0, propertyPrice - downPayment) : 0;
 
-  // ④ シナリオ計算（CF改善の参考値）
+  // シナリオ計算（CF改善の参考値）
   const scenarioCF35yr =
-    result !== null && loanYears < 35 && propertyPrice !== null && monthlyRent !== null
+    result !== null && loanYears < 35 && propertyPrice !== null && monthlyRentFull !== null
       ? calcCashflow({ ...inputs, loanYears: 35 })?.monthlyCashflow ?? null
       : null;
 
   const scenarioCFMore200 =
-    result !== null && propertyPrice !== null && monthlyRent !== null
+    result !== null && propertyPrice !== null && monthlyRentFull !== null
       ? calcCashflow({ ...inputs, downPayment: downPayment + 200 })?.monthlyCashflow ?? null
       : null;
 
   const scenarioCFLowerRate =
-    result !== null && interestRate > 0.5 && propertyPrice !== null && monthlyRent !== null
+    result !== null && interestRate > 0.5 && propertyPrice !== null && monthlyRentFull !== null
       ? calcCashflow({ ...inputs, interestRate: interestRate - 0.5 })?.monthlyCashflow ?? null
       : null;
 
@@ -190,6 +212,15 @@ export default function CashflowCalculator() {
           downPayment,
         )
       : null;
+
+  // #3: 自己資金利回りの説明文
+  const equityDescription = () => {
+    const base = downPayment > 0 ? `頭金${downPayment}万円` : '物件価格';
+    if (purchaseCosts > 0) {
+      return `年間CF ÷ (${base} + 諸費用${purchaseCosts}万円) × 100`;
+    }
+    return `年間CF ÷ ${base} × 100`;
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -220,19 +251,19 @@ export default function CashflowCalculator() {
         inputGuide={
           <ul className="space-y-1.5">
             <li>
-              <strong>物件価格・月額家賃：</strong>これまでの計算と同じ値を入力してください
+              <strong>物件価格・満室時家賃：</strong>これまでの計算と同じ値を入力してください。前のページで入力済みなら自動的に入ります
+            </li>
+            <li>
+              <strong>空室率：</strong>想定する空室率（%）を入力。0%なら常に満室、10%なら年間約1ヶ月空室の想定
+            </li>
+            <li>
+              <strong>購入諸費用：</strong>仲介手数料・登記費用・不動産取得税など（目安：物件価格の5〜8%）。自己資金利回りに反映されます
             </li>
             <li>
               <strong>頭金：</strong>自己資金から充てる金額。残りが借入金額になります
             </li>
             <li>
               <strong>金利（年率）：</strong>金融機関から提示された金利。変動金利の目安は0.5〜2%程度
-            </li>
-            <li>
-              <strong>返済期間：</strong>長いほど月の返済額は下がりますが、総支払利息は増えます
-            </li>
-            <li>
-              <strong>年間経費合計：</strong>実質利回り計算で求めた経費の合計を入力してください
             </li>
           </ul>
         }
@@ -243,7 +274,7 @@ export default function CashflowCalculator() {
             </li>
             <li>マイナスの場合は毎月の持ち出しが発生します</li>
             <li>
-              <strong>自己資金利回り</strong>は、頭金に対して年間CFが何%かを示す指標です
+              <strong>自己資金利回り</strong>は、自己資金（頭金＋購入諸費用）に対して年間CFが何%かを示す指標です
             </li>
             <li>条件を変えながら「CFがゼロになる頭金」を探すのも有効です</li>
           </ul>
@@ -284,15 +315,39 @@ export default function CashflowCalculator() {
               step={50}
               placeholder="例：1500"
             />
+
+            {/* #2: 満室時家賃と空室率 */}
             <InputField
-              label="月額家賃収入"
-              value={monthlyRent}
-              onChange={setMonthlyRent}
+              label="満室時月額家賃収入"
+              value={monthlyRentFull}
+              onChange={setMonthlyRentFull}
               unit="万円"
+              hint="入居者が全員いる満室想定の家賃合計"
               min={0}
               step={0.5}
               placeholder="例：8.5"
             />
+            <InputField
+              label="想定空室率"
+              value={vacancyRate}
+              onChange={setVacancyRate}
+              unit="%"
+              hint="年間を通じて何%空室かの想定。一般的な目安は5〜10%"
+              min={0}
+              max={100}
+              step={1}
+              placeholder="例：5"
+            />
+            {monthlyRentFull !== null && (
+              <div className="mb-4 bg-blue-50 rounded-lg px-4 py-3 text-sm text-blue-700">
+                実際の月間家賃収入：
+                <strong>{effectiveMonthlyRent!.toFixed(1)}万円</strong>
+                <span className="text-xs text-blue-500 ml-2">
+                  （満室時 {monthlyRentFull}万円 × {100 - vacancyRate}%）
+                </span>
+              </div>
+            )}
+
             <InputField
               label="年間経費合計"
               value={annualExpenses}
@@ -302,6 +357,18 @@ export default function CashflowCalculator() {
               min={0}
               step={1}
               placeholder="例：30"
+            />
+
+            {/* #3: 購入諸費用 */}
+            <InputField
+              label="購入諸費用"
+              value={purchaseCosts}
+              onChange={setPurchaseCosts}
+              unit="万円"
+              hint="仲介手数料・登記費用・不動産取得税など（目安：物件価格の5〜8%）。自己資金利回りの計算に使います"
+              min={0}
+              step={10}
+              placeholder="例：90"
             />
           </div>
 
@@ -443,7 +510,7 @@ export default function CashflowCalculator() {
                   label="自己資金利回り（CF利回り）"
                   value={result.cashflowYield.toFixed(2)}
                   unit="%"
-                  description={`年間CF ÷ 頭金${downPayment > 0 ? `（${downPayment}万円）` : '（物件価格）'} × 100`}
+                  description={equityDescription()}
                   highlight
                 />
                 <div className="border-t border-slate-100 mt-4 pt-4">
@@ -456,7 +523,7 @@ export default function CashflowCalculator() {
                   />
                 </div>
 
-                {/* ③ Tiered evaluation comment (5 tiers) */}
+                {/* Tiered evaluation comment */}
                 <div className="mt-4 rounded-lg p-4 text-sm bg-slate-50">
                   {result.monthlyCashflow >= 5 ? (
                     <p className="text-green-700">
@@ -481,7 +548,7 @@ export default function CashflowCalculator() {
                   )}
                 </div>
 
-                {/* ④ Improvement suggestions (shown when CF < 0) */}
+                {/* CF improvement suggestions */}
                 {result.monthlyCashflow < 0 && (
                   <div className="mt-3 rounded-lg p-4 bg-amber-50 border border-amber-200">
                     <p className="text-xs font-semibold text-amber-800 mb-2">
@@ -520,7 +587,7 @@ export default function CashflowCalculator() {
                   </div>
                 )}
 
-                {/* ⑤ AI advisor card */}
+                {/* AI advisor card */}
                 {advisorData && <AdvisorCard {...advisorData} />}
               </div>
             ) : (
@@ -540,9 +607,9 @@ export default function CashflowCalculator() {
       </div>
 
       {/* Vacancy sensitivity simulation */}
-      {result !== null && monthlyRent !== null && (
+      {result !== null && monthlyRentFull !== null && (
         <VacancySensitivityPanel
-          monthlyRentFull={monthlyRent}
+          monthlyRentFull={monthlyRentFull}
           monthlyPayment={result.monthlyPayment}
           monthlyExpenses={result.monthlyExpenses}
         />
@@ -552,7 +619,11 @@ export default function CashflowCalculator() {
         items={[
           {
             label: '月間キャッシュフロー',
-            formula: '月間CF ＝ 月額家賃収入 − 月返済額 − 月間経費（年間経費 ÷ 12）',
+            formula: '月間CF ＝ 実際の月額家賃収入 − 月返済額 − 月間経費（年間経費 ÷ 12）',
+          },
+          {
+            label: '実際の月額家賃収入',
+            formula: '実際の月額家賃 ＝ 満室時家賃 × (1 − 空室率)',
           },
           {
             label: '元利均等返済の月返済額',
@@ -561,7 +632,7 @@ export default function CashflowCalculator() {
           },
           {
             label: '自己資金利回り（CF利回り）',
-            formula: '自己資金利回り（%）＝ 年間CF ÷ 頭金 × 100',
+            formula: '自己資金利回り（%）＝ 年間CF ÷ (頭金 + 購入諸費用) × 100',
             example: 'レバレッジ効果を測る指標。自己資金に対して何%のリターンかを示す',
           },
         ]}

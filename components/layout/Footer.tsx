@@ -4,23 +4,70 @@ export default function Footer() {
   return (
     <footer className="bg-slate-900 text-slate-400 mt-16">
       <div className="max-w-5xl mx-auto px-4 py-10">
-        {/* Links */}
-        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm mb-8">
-          <Link href="/" className="hover:text-white transition-colors">
-            ホーム
-          </Link>
-          <Link href="/tools/surface-yield" className="hover:text-white transition-colors">
-            表面利回り計算
-          </Link>
-          <Link href="/tools/net-yield" className="hover:text-white transition-colors">
-            実質利回り計算
-          </Link>
-          <Link href="/tools/cashflow" className="hover:text-white transition-colors">
-            CF計算
-          </Link>
-          <Link href="/guide" className="hover:text-white transition-colors">
-            不動産投資の基礎
-          </Link>
+        {/* Navigation */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mb-8 text-sm">
+          <div>
+            <p className="text-slate-300 font-semibold mb-2">計算ツール</p>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/tools/surface-yield" className="hover:text-white transition-colors">
+                  表面利回り計算
+                </Link>
+              </li>
+              <li>
+                <Link href="/tools/net-yield" className="hover:text-white transition-colors">
+                  実質利回り計算
+                </Link>
+              </li>
+              <li>
+                <Link href="/tools/cashflow" className="hover:text-white transition-colors">
+                  ローン・CF計算
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-slate-300 font-semibold mb-2">コンテンツ</p>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/" className="hover:text-white transition-colors">
+                  ホーム
+                </Link>
+              </li>
+              <li>
+                <Link href="/guide" className="hover:text-white transition-colors">
+                  不動産投資の基礎
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-slate-300 font-semibold mb-2">サイト情報</p>
+            <ul className="space-y-1.5">
+              <li>
+                <Link href="/privacy" className="hover:text-white transition-colors">
+                  プライバシーポリシー
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors">
+                  お問い合わせ
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-slate-300 font-semibold mb-2">サイトマップ</p>
+            <ul className="space-y-1.5 text-xs">
+              <li><Link href="/" className="hover:text-white transition-colors">トップ</Link></li>
+              <li><Link href="/tools/surface-yield" className="hover:text-white transition-colors">表面利回り</Link></li>
+              <li><Link href="/tools/net-yield" className="hover:text-white transition-colors">実質利回り</Link></li>
+              <li><Link href="/tools/cashflow" className="hover:text-white transition-colors">CF計算</Link></li>
+              <li><Link href="/guide" className="hover:text-white transition-colors">ガイド</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition-colors">プライバシー</Link></li>
+              <li><Link href="/contact" className="hover:text-white transition-colors">お問い合わせ</Link></li>
+            </ul>
+          </div>
         </div>
 
         {/* Disclaimer */}

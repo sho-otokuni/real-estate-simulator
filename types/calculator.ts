@@ -41,6 +41,7 @@ export interface CashflowInput {
   repaymentType: RepaymentType;
   monthlyRent: number;
   annualExpenses: number;
+  purchaseCosts: number;
 }
 
 export interface CashflowResult {

@@ -1,8 +1,16 @@
 import { CashflowInput, CashflowResult } from '@/types/calculator';
 
 export function calcCashflow(input: CashflowInput): CashflowResult | null {
-  const { propertyPrice, downPayment, interestRate, loanYears, repaymentType, monthlyRent, annualExpenses } =
-    input;
+  const {
+    propertyPrice,
+    downPayment,
+    interestRate,
+    loanYears,
+    repaymentType,
+    monthlyRent,
+    annualExpenses,
+    purchaseCosts,
+  } = input;
 
   if (propertyPrice <= 0) return null;
 
@@ -37,8 +45,11 @@ export function calcCashflow(input: CashflowInput): CashflowResult | null {
   const totalInterest = totalPayment - loanAmount;
   const monthlyCashflow = monthlyRent - monthlyPayment - monthlyExpenses;
   const annualCashflow = monthlyCashflow * 12;
-  const equityInvested = downPayment > 0 ? downPayment : propertyPrice;
-  const cashflowYield = (annualCashflow / equityInvested) * 100;
+
+  // 自己資金 = 頭金（またはフルローン時は物件価格） + 購入諸費用
+  const equityBase = downPayment > 0 ? downPayment : propertyPrice;
+  const equityInvested = equityBase + purchaseCosts;
+  const cashflowYield = equityInvested > 0 ? (annualCashflow / equityInvested) * 100 : 0;
 
   return {
     loanAmount,

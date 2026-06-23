@@ -7,6 +7,22 @@ export const metadata: Metadata = {
     '表面利回り・実質利回り・ローン返済キャッシュフローを無料で簡単計算できます。不動産投資初心者〜中級者向けの無料Webツールです。',
 };
 
+const SCHEMA = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: '不動産投資シミュレーター',
+  url: 'https://real-estate-simulator-five.vercel.app',
+  description: '表面利回り・実質利回り・ローン返済キャッシュフローを無料で簡単計算。不動産投資初心者向けの無料Webツール。',
+  applicationCategory: 'FinanceApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'ja',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'JPY',
+  },
+};
+
 const tools = [
   {
     href: '/tools/surface-yield',
@@ -47,6 +63,12 @@ const features = [
 export default function TopPage() {
   return (
     <div>
+      {/* Schema.org structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(SCHEMA) }}
+      />
+
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -57,7 +79,7 @@ export default function TopPage() {
           </h1>
           <p className="text-slate-300 text-base sm:text-lg mb-8 max-w-xl mx-auto">
             表面利回り・実質利回り・キャッシュフローを<br />
-            無料で簡単計算。初心者でも3分でわかります。
+            無料で簡単計算。初心者でも使いやすい設計です。
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
