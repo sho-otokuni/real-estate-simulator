@@ -39,6 +39,11 @@ export default function Footer() {
                   不動産投資の基礎
                 </Link>
               </li>
+              <li>
+                <Link href="/articles" className="hover:text-white transition-colors">
+                  コラム
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -64,6 +69,7 @@ export default function Footer() {
               <li><Link href="/tools/net-yield" className="hover:text-white transition-colors">実質利回り</Link></li>
               <li><Link href="/tools/cashflow" className="hover:text-white transition-colors">CF計算</Link></li>
               <li><Link href="/guide" className="hover:text-white transition-colors">ガイド</Link></li>
+              <li><Link href="/articles" className="hover:text-white transition-colors">コラム</Link></li>
               <li><Link href="/privacy" className="hover:text-white transition-colors">プライバシー</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">お問い合わせ</Link></li>
             </ul>

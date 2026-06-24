@@ -9,6 +9,7 @@ const navLinks = [
   { href: '/tools/net-yield', label: '実質利回り計算' },
   { href: '/tools/cashflow', label: 'ローン・CF計算' },
   { href: '/guide', label: '不動産投資の基礎' },
+  { href: '/articles', label: 'コラム' },
 ];
 
 export default function Header() {

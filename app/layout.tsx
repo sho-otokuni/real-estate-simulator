@@ -18,9 +18,6 @@ export const metadata: Metadata = {
     template: '%s｜不動産投資シミュレーター',
   },
   description: SITE_DESCRIPTION,
-  alternates: {
-    canonical: SITE_URL,
-  },
   openGraph: {
     type: 'website',
     locale: 'ja_JP',

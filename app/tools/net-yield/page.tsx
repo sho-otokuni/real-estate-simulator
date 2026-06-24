@@ -75,6 +75,24 @@ export default function NetYieldPage() {
           ))}
         </div>
       </section>
+
+      <div className="max-w-5xl mx-auto px-4 pb-10">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
+          <p className="text-sm font-semibold text-blue-800 mb-3">📖 関連コラム</p>
+          <ul className="space-y-2">
+            <li>
+              <a href="/articles/net-yield" className="text-sm text-blue-700 hover:underline">
+                実質利回りとは？表面利回りとの違いと計算方法 →
+              </a>
+            </li>
+            <li>
+              <a href="/articles/investment-decision" className="text-sm text-blue-700 hover:underline">
+                不動産投資で買ってはいけない物件の特徴5選 →
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }

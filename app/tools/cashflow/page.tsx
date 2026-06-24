@@ -75,6 +75,29 @@ export default function CashflowPage() {
           ))}
         </div>
       </section>
+
+      <div className="max-w-5xl mx-auto px-4 pb-10">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
+          <p className="text-sm font-semibold text-blue-800 mb-3">📖 関連コラム</p>
+          <ul className="space-y-2">
+            <li>
+              <a href="/articles/cash-flow" className="text-sm text-blue-700 hover:underline">
+                不動産投資のキャッシュフロー計算方法と改善のポイント →
+              </a>
+            </li>
+            <li>
+              <a href="/articles/vacancy-rate" className="text-sm text-blue-700 hover:underline">
+                空室率が収益に与える影響｜損益分岐ラインの考え方 →
+              </a>
+            </li>
+            <li>
+              <a href="/articles/investment-decision" className="text-sm text-blue-700 hover:underline">
+                不動産投資で買ってはいけない物件の特徴5選 →
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
