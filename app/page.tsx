@@ -74,12 +74,12 @@ export default function TopPage() {
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-blue-300 text-sm font-medium mb-3 tracking-wide">不動産投資 × 計算ツール</p>
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 leading-tight">
-            物件を買う前に、<br className="sm:hidden" />
-            まず計算してみよう
+            不動産投資の利回り・<br className="sm:hidden" />
+            キャッシュフロー計算ツール
           </h1>
           <p className="text-slate-300 text-base sm:text-lg mb-8 max-w-xl mx-auto">
-            表面利回り・実質利回り・キャッシュフローを<br />
-            無料で簡単計算。初心者でも使いやすい設計です。
+            物件を買う前に、まず計算してみよう。<br />
+            表面利回り・実質利回り・CFを無料で簡単計算。
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
