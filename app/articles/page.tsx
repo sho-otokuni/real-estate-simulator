@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ARTICLES, type ArticleCategory } from '@/lib/articles';
+import { ARTICLE_CONTENT } from '@/lib/article-content';
 
 export const metadata: Metadata = {
   title: '不動産投資コラム｜利回り・CF・リスク管理を解説',
@@ -13,6 +14,19 @@ const CATEGORY_STYLES: Record<ArticleCategory, string> = {
   '計算・分析': 'bg-green-100 text-green-700',
   'リスク管理': 'bg-amber-100 text-amber-700',
 };
+
+const DISPLAY_ORDER = [
+  'gross-yield',
+  'net-yield',
+  'cash-flow',
+  'vacancy-rate',
+  'investment-decision',
+];
+
+const articleMap = new Map(ARTICLES.map((a) => [a.slug, a]));
+const publishedArticles = DISPLAY_ORDER
+  .filter((slug) => slug in ARTICLE_CONTENT && articleMap.has(slug))
+  .map((slug) => articleMap.get(slug)!);
 
 export default function ArticlesPage() {
   return (
@@ -33,10 +47,11 @@ export default function ArticlesPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {ARTICLES.map((article) => (
-            <div
+          {publishedArticles.map((article) => (
+            <Link
               key={article.slug}
-              className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col"
+              href={`/articles/${article.slug}`}
+              className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col hover:border-blue-300 hover:shadow-sm transition-all group"
             >
               <div className="mb-3">
                 <span
@@ -45,14 +60,16 @@ export default function ArticlesPage() {
                   {article.category}
                 </span>
               </div>
-              <h2 className="text-base font-bold text-slate-800 leading-snug mb-2">
+              <h2 className="text-base font-bold text-slate-800 leading-snug mb-2 group-hover:text-blue-600 transition-colors">
                 {article.title}
               </h2>
               <p className="text-xs text-slate-500 leading-relaxed flex-1">
                 {article.description}
               </p>
-              <p className="mt-4 text-xs text-slate-400 italic">近日公開予定</p>
-            </div>
+              <p className="mt-4 text-xs text-blue-600 font-medium group-hover:underline">
+                読む →
+              </p>
+            </Link>
           ))}
         </div>
 
