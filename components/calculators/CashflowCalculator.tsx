@@ -7,12 +7,98 @@ import FormulaBox from '@/components/ui/FormulaBox';
 import Disclaimer from '@/components/ui/Disclaimer';
 import HowToUseBox from '@/components/ui/HowToUseBox';
 import AdvisorCard, { AdvisorGrade } from '@/components/ui/AdvisorCard';
+import PurchaseJudgmentCard from '@/components/ui/PurchaseJudgmentCard';
 import VacancySensitivityPanel from '@/components/ui/VacancySensitivityPanel';
 import { calcCashflow } from '@/lib/calculators/cashflow';
 import { RepaymentType } from '@/types/calculator';
 import { loadSharedProperty } from '@/lib/utils/sharedProperty';
 
 const LOAN_YEAR_OPTIONS = [10, 15, 20, 25, 30, 35];
+
+const GRADE_ORDER: AdvisorGrade[] = ['D', 'C', 'B', 'A', 'S'];
+
+function gradeIndex(g: AdvisorGrade): number {
+  return GRADE_ORDER.indexOf(g);
+}
+
+function rateNetYield(v: number): AdvisorGrade {
+  if (v >= 5) return 'S';
+  if (v >= 3) return 'A';
+  if (v >= 2) return 'B';
+  if (v >= 0) return 'C';
+  return 'D';
+}
+
+function rateMonthlyCF(v: number): AdvisorGrade {
+  if (v >= 3) return 'S';
+  if (v >= 1) return 'A';
+  if (v >= 0) return 'B';
+  if (v >= -3) return 'C';
+  return 'D';
+}
+
+function rateBreakEven(v: number | null): AdvisorGrade {
+  if (v === null || v <= 0) return 'D';
+  if (v >= 30) return 'S';
+  if (v >= 20) return 'A';
+  if (v >= 10) return 'B';
+  return 'C';
+}
+
+function getPurchaseJudgment(
+  netYield: number,
+  monthlyCF: number,
+  breakEven: number | null,
+): { grade: AdvisorGrade; gradeLabel: string; reasons: string[] } {
+  const nyGrade = rateNetYield(netYield);
+  const cfGrade = rateMonthlyCF(monthlyCF);
+  const beGrade = rateBreakEven(breakEven);
+  const grade =
+    GRADE_ORDER[Math.min(gradeIndex(nyGrade), gradeIndex(cfGrade), gradeIndex(beGrade))];
+
+  const GRADE_LABELS: Record<AdvisorGrade, string> = {
+    S: '非常に優秀な投資条件',
+    A: '良好な投資条件',
+    B: '概ね問題ない条件',
+    C: '条件の改善を検討',
+    D: '投資条件の見直しが必要',
+  };
+
+  const cfText = `${monthlyCF >= 0 ? '+' : ''}${monthlyCF.toFixed(1)}万円/月`;
+  const breakEvenText =
+    breakEven === null || breakEven <= 0 ? '満室でも赤字' : `${breakEven.toFixed(1)}%`;
+
+  const nyReasonMap: Record<AdvisorGrade, string> = {
+    S: `実質利回り${netYield.toFixed(2)}%は非常に高い水準で、十分な収益性が期待できます`,
+    A: `実質利回り${netYield.toFixed(2)}%は良好な水準で、安定した収益が見込めます`,
+    B: `実質利回り${netYield.toFixed(2)}%は標準的な水準ですが、ローン金利との差は小さめです`,
+    C: `実質利回り${netYield.toFixed(2)}%は低く、費用の圧迫が懸念されます`,
+    D: `実質利回り${netYield.toFixed(2)}%はマイナスで、経費が家賃収入を上回っています`,
+  };
+  const cfReasonMap: Record<AdvisorGrade, string> = {
+    S: `月間CF${cfText}と十分なプラスで、空室・修繕費への余裕があります`,
+    A: `月間CF${cfText}で良好なキャッシュフローが確保できています`,
+    B: `月間CF${cfText}のプラスを確保していますが、緊急時の手元資金が重要です`,
+    C: `月間CF${cfText}のマイナスで、毎月の持ち出しが発生します`,
+    D: `月間CF${cfText}の大きなマイナスで、収支改善が急務です`,
+  };
+  const beReasonMap: Record<AdvisorGrade, string> = {
+    S: `損益分岐空室率${breakEvenText}と高く、空室リスクへの耐性が十分あります`,
+    A: `損益分岐空室率${breakEvenText}で、一般的な空室率を十分にカバーできます`,
+    B: `損益分岐空室率${breakEvenText}で、一般目安の10%付近です`,
+    C: `損益分岐空室率${breakEvenText}と低く、ほぼ満室維持が前提となります`,
+    D:
+      breakEven !== null && breakEven > 0
+        ? `損益分岐空室率${breakEvenText}と極めて低く、わずかな空室で赤字になります`
+        : `損益分岐空室率が0%以下で、満室でも毎月赤字です`,
+  };
+
+  return {
+    grade,
+    gradeLabel: GRADE_LABELS[grade],
+    reasons: [nyReasonMap[nyGrade], cfReasonMap[cfGrade], beReasonMap[beGrade]],
+  };
+}
 
 function getAdvisorData(
   monthlyCF: number,
@@ -211,6 +297,27 @@ export default function CashflowCalculator() {
           interestRate,
           downPayment,
         )
+      : null;
+
+  const netYield =
+    propertyPrice !== null &&
+    monthlyRentFull !== null &&
+    propertyPrice + purchaseCosts > 0
+      ? ((monthlyRentFull * 12 * (1 - vacancyRate / 100) - annualExpenses) /
+          (propertyPrice + purchaseCosts)) *
+        100
+      : null;
+
+  const yieldGap = netYield !== null ? netYield - interestRate : null;
+
+  const breakEven =
+    result !== null && monthlyRentFull !== null && monthlyRentFull > 0
+      ? (1 - (result.monthlyPayment + result.monthlyExpenses) / monthlyRentFull) * 100
+      : null;
+
+  const purchaseJudgment =
+    result !== null && netYield !== null
+      ? getPurchaseJudgment(netYield, result.monthlyCashflow, breakEven)
       : null;
 
   // #3: 自己資金利回りの説明文
@@ -523,6 +630,45 @@ export default function CashflowCalculator() {
                   />
                 </div>
 
+                {/* イールドギャップ */}
+                {yieldGap !== null && netYield !== null && (
+                  <div className="border-t border-slate-100 mt-4 pt-4">
+                    <div className="py-3">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-sm text-slate-600 shrink-0">イールドギャップ</span>
+                        <div className="flex items-baseline gap-2">
+                          <span
+                            className={`font-bold text-xl ${
+                              yieldGap >= 3
+                                ? 'text-green-600'
+                                : yieldGap >= 2
+                                  ? 'text-blue-600'
+                                  : 'text-amber-600'
+                            }`}
+                          >
+                            {yieldGap >= 0 ? '+' : ''}
+                            {yieldGap.toFixed(2)}%
+                          </span>
+                          <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              yieldGap >= 3
+                                ? 'bg-green-100 text-green-700'
+                                : yieldGap >= 2
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-amber-100 text-amber-700'
+                            }`}
+                          >
+                            {yieldGap >= 3 ? '良好' : yieldGap >= 2 ? '普通' : '注意'}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        実質利回り{netYield.toFixed(2)}% − 借入金利{interestRate}% ／ 2%以上が目安
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Tiered evaluation comment */}
                 <div className="mt-4 rounded-lg p-4 text-sm bg-slate-50">
                   {result.monthlyCashflow >= 5 ? (
@@ -586,6 +732,9 @@ export default function CashflowCalculator() {
                     </ul>
                   </div>
                 )}
+
+                {/* 購入判定 */}
+                {purchaseJudgment && <PurchaseJudgmentCard {...purchaseJudgment} />}
 
                 {/* AI advisor card */}
                 {advisorData && <AdvisorCard {...advisorData} />}
